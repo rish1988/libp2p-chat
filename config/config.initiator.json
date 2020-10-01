@@ -1,0 +1,27 @@
+{
+  "privateKey" : {
+    "dir" : "~/.libp2p-chat/initiator",
+    "fileName": "libp2p.prv"
+  },
+  "appConfig": {
+    "appName": "libp2p-chat",
+    "appVersion": "0.1-alpha",
+    "protocolID": "chat"
+  },
+  "listenAddrs": [
+    "/ip4/0.0.0.0/tcp/9000",
+    "/ip6/::/tcp/9000",
+    "/ip4/0.0.0.0/udp/9000/quic",
+    "/ip6/::/udp/9000/quic"
+  ],
+  "remotePeers": [
+    {
+      "dialAddrs": [
+        "/ip4/127.0.0.1/udp/9001/quic/p2p/16Uiu2HAmSjtMjspqy1CsVTTe8b5dK2Tch5XJ2fRdsYJfebx9zwFp",
+        "/ip6/::1/udp/9001/quic/p2p/16Uiu2HAmSjtMjspqy1CsVTTe8b5dK2Tch5XJ2fRdsYJfebx9zwFp"
+      ],
+      "name": "Bob"
+    }
+  ],
+  "name": "Alice"
+}

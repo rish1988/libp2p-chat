@@ -1,0 +1,19 @@
+{
+  "privateKey" : {
+    "dir" : "~/.libp2p-chat/responder",
+    "fileName": "libp2p.prv"
+  },
+  "appConfig": {
+    "appName": "libp2p-chat",
+    "appVersion": "0.1-alpha",
+    "protocolID": "chat"
+  },
+  "listenAddrs": [
+    "/ip4/0.0.0.0/tcp/9001",
+    "/ip6/::/tcp/9001",
+    "/ip4/0.0.0.0/udp/9001/quic",
+    "/ip6/::/udp/9001/quic"
+  ],
+  "remotePeers" : [],
+  "name": "Bob"
+}
