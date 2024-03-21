@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/rish1988/libp2p-chat/log"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
@@ -47,7 +46,7 @@ func (rp *RemotePeer) Addresses() []peer.AddrInfo {
 	}
 
 	if multiAddrs != nil {
-		if addrInfo, err  := peer.AddrInfosFromP2pAddrs(multiAddrs...); err != nil {
+		if addrInfo, err := peer.AddrInfosFromP2pAddrs(multiAddrs...); err != nil {
 			log.Errorln(err)
 		} else {
 			return addrInfo
@@ -110,14 +109,14 @@ func (p *PrivateKey) Read() (crypto.PrivKey, error) {
 	if _, err = os.Stat(*privKeyPath); err != nil {
 		return nil, err
 	} else {
-		if contents, err := ioutil.ReadFile(*privKeyPath); err != nil {
+		if contents, err := os.ReadFile(*privKeyPath); err != nil {
 			return nil, err
 		} else {
 			var privKeyDecoded = make([]byte, len(contents)/2)
 			if _, err = hex.Decode(privKeyDecoded, contents); err != nil {
 				return nil, err
 			}
-			privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privKeyDecoded)
+			privKey, _ := btcec.PrivKeyFromBytes(privKeyDecoded)
 			return (*crypto.Secp256k1PrivateKey)(privKey), nil
 		}
 	}
@@ -150,19 +149,20 @@ func (p *PrivateKey) Write(privKey *[]byte) error {
 		privKeyDir  = path.Dir(*privKeyPath)
 	)
 
-	prv, _ := btcec.PrivKeyFromBytes(btcec.S256(), *privKey)
+	prv, _ := btcec.PrivKeyFromBytes(*privKey)
 
 	prvAsHex := hex.EncodeToString(prv.Serialize())
 
 	if _, err := os.Stat(privKeyDir); os.IsNotExist(err) {
-		if err := os.Mkdir(privKeyDir, 0700); err != nil {
+		log.Infof("Creating directory %s", privKeyDir)
+		if err := os.MkdirAll(privKeyDir, 0700); err != nil {
 			return err
 		} else {
-			return ioutil.WriteFile(*p.privateKeyAbsPath(), []byte(prvAsHex), 0600)
+			return os.WriteFile(*p.privateKeyAbsPath(), []byte(prvAsHex), 0600)
 		}
 	}
 
-	return ioutil.WriteFile(*p.privateKeyAbsPath(), []byte(prvAsHex), 0600)
+	return os.WriteFile(*p.privateKeyAbsPath(), []byte(prvAsHex), 0600)
 }
 
 func (p *PrivateKey) GenerateSecp256k1KeyPair() (crypto.PrivKey, crypto.PubKey) {

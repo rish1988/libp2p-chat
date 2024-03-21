@@ -15,7 +15,7 @@ The current state of the application doesn't support node discovery. Feel free t
 
 # Prerequisites
 
-* Go (version 1.14 or higher)
+* Go (version 1.22 or higher)
 * Go mod feature turned on
 
 # Building

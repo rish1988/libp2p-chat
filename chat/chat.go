@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/rish1988/libp2p-chat/config"
 	"github.com/rish1988/libp2p-chat/log"
 	"os"
@@ -18,16 +18,16 @@ import (
 
 type Chat struct {
 	Username *string
-	Host *host.Host
-	Remote *config.RemotePeer
+	Host     *host.Host
+	Remote   *config.RemotePeer
 }
 
 type chatMessage struct {
 	Username string
-	Message string
+	Message  string
 }
 
-func NewChat(ctx context.Context ,h *host.Host, rp *config.RemotePeer, cfg *config.Config) *Chat {
+func NewChat(ctx context.Context, h *host.Host, rp *config.RemotePeer, cfg *config.Config) *Chat {
 	ch := &Chat{Username: &cfg.Username, Host: h, Remote: rp}
 	log.Infof("Remote Peer %s with addresses %v added", *rp.PeerId(), rp.Addresses())
 	if s, err := (*h).NewStream(ctx, *rp.PeerId(), cfg.Protocol()); err != nil {
@@ -72,7 +72,7 @@ func (c *Chat) readMessage(r *bufio.Reader, s *network.Stream) {
 			if rbytes, err := r.ReadBytes(byte('\n')); err != nil {
 				(*s).Close()
 				//log.Errorln(err)
-			} else if err  := json.Unmarshal(rbytes[:len(rbytes) -1], &rmessage); err != nil {
+			} else if err := json.Unmarshal(rbytes[:len(rbytes)-1], &rmessage); err != nil {
 				log.Errorln(err)
 			} else {
 				if len(rmessage.Message) == 0 {

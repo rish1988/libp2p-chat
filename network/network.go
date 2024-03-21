@@ -2,18 +2,18 @@ package network
 
 import (
 	"encoding/hex"
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
-	peerstore2 "github.com/libp2p/go-libp2p-core/peerstore"
-	"github.com/libp2p/go-libp2p-core/routing"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
-	secio "github.com/libp2p/go-libp2p-secio"
-	libp2ptls "github.com/libp2p/go-libp2p-tls"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
+	"github.com/libp2p/go-libp2p/core/routing"
+	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 	"github.com/mr-tron/base58"
+	tor "github.com/rish1988/go-libp2p-tor-transport"
+	tcfg "github.com/rish1988/go-libp2p-tor-transport/config"
 	"github.com/rish1988/libp2p-chat/chat"
 	"github.com/rish1988/libp2p-chat/config"
 	"github.com/rish1988/libp2p-chat/log"
@@ -28,24 +28,26 @@ func BootStrapApp(privKey *crypto.PrivKey, cfg *config.Config) *host.Host {
 
 	var idht *dht.IpfsDHT
 
-	node, err := libp2p.New(ctx,
+	node, err := libp2p.New(
 		libp2p.Identity(*privKey),
 		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
-		libp2p.Security(secio.ID, secio.New),
 		libp2p.DefaultTransports,
-		libp2p.Transport(libp2pquic.NewTransport),
 		libp2p.NATPortMap(),
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
 			log.Infoln("Creating Kademlia Hash table (KHT)")
 			idht, err = dht.New(ctx, h)
 			return idht, err
 		}),
-		libp2p.EnableAutoRelay(),
+		libp2p.EnableRelay(),
+		libp2p.EnableRelayService(),
+		libp2p.EnableHolePunching(),
+		//libp2p.EnableAutoRelay(),
 		// If you want to help other peers to figure out if they are behind
 		// NATs, you can launch the server-side of AutoNAT too (AutoRelay
 		// already runs the client)
 		libp2p.EnableNATService(),
+		libp2p.Transport(tor.NewBuilder(tcfg.EnableEmbeded)),
 	)
 
 	if err != nil {
@@ -66,13 +68,14 @@ func BootStrapApp(privKey *crypto.PrivKey, cfg *config.Config) *host.Host {
 	} else {
 		initiator(cfg, &node, ctx)
 	}
+
 	return &node
 }
 
 func initiator(cfg *config.Config, node *host.Host, ctx context.Context) {
 	for _, rp := range *cfg.RemotePeers {
 		for _, addr := range rp.Addresses() {
-			(*node).Peerstore().AddAddrs(*rp.PeerId(), addr.Addrs, peerstore2.PermanentAddrTTL)
+			(*node).Peerstore().AddAddrs(*rp.PeerId(), addr.Addrs, peerstore.PermanentAddrTTL)
 		}
 		chat.NewChat(ctx, node, rp, cfg)
 	}
@@ -92,16 +95,16 @@ func printPubKeyInfo(privKey *crypto.PrivKey) (error, []byte) {
 		log.Errorln(err)
 	}
 
-	_, pub := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
+	_, pub := btcec.PrivKeyFromBytes(privKeyBytes)
 
 	log.Infoln(strings.Repeat("=", 80))
 	log.Infoln("Pubkey Info")
 	log.Infoln(strings.Repeat("=", 80))
 
-	log.Infof("Using public key (x,y): (%v,%v)", hex.EncodeToString(pub.X.Bytes()), hex.EncodeToString(pub.Y.Bytes()))
+	log.Infof("Using public key (x,y): (%v,%v)", hex.EncodeToString(pub.X().Bytes()), hex.EncodeToString(pub.Y().Bytes()))
 	log.Infof("Using public key (Uncompressed): %v", hex.EncodeToString(pub.SerializeUncompressed()))
 	log.Infof("Using public key (Compressed): %v", hex.EncodeToString(pub.SerializeCompressed()))
-	protobufEncodedPubKey, _ := (*privKey).GetPublic().Bytes()
+	protobufEncodedPubKey, _ := (*privKey).GetPublic().Raw()
 	log.Infof("Pubkey protobuf: <KeyType=0x02 (Secp256k1)><Pubkey data=0x%v>", hex.EncodeToString(pub.SerializeCompressed()))
 	log.Infoln("Protobuf Encoding: 0x08 (WireType=VarInt (0), Field number = 1) <KeyType> 0x12 (WireType=Bytes(2), Field number = 2)<Bytes Length=0x21><Pubkey data>")
 	log.Infof("Using public key (Protobuf Encoded): %v", hex.EncodeToString(protobufEncodedPubKey))
