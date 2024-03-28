@@ -10,15 +10,13 @@
   },
   "listenAddrs": [
     "/ip4/0.0.0.0/tcp/9000",
-    "/ip6/::/tcp/9000",
-    "/ip4/0.0.0.0/udp/9000/quic",
-    "/ip6/::/udp/9000/quic"
+    "/ip6/::/tcp/9000"
   ],
   "remotePeers": [
     {
       "dialAddrs": [
-        "/ip4/127.0.0.1/udp/9001/quic/p2p/16Uiu2HAmSjtMjspqy1CsVTTe8b5dK2Tch5XJ2fRdsYJfebx9zwFp",
-        "/ip6/::1/udp/9001/quic/p2p/16Uiu2HAmSjtMjspqy1CsVTTe8b5dK2Tch5XJ2fRdsYJfebx9zwFp"
+        "/ip4/127.0.0.1/tcp/9001/p2p/16Uiu2HAm24aKXCntvhVYJ1YN6DcN5qxrtnxGmWkUKd2B2uXDUeW8",
+        "/ip6/::1/tcp/9001/p2p/16Uiu2HAm24aKXCntvhVYJ1YN6DcN5qxrtnxGmWkUKd2B2uXDUeW8"
       ],
       "name": "Bob"
     }

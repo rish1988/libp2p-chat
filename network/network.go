@@ -12,8 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/routing"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 	"github.com/mr-tron/base58"
-	tor "github.com/rish1988/go-libp2p-tor-transport"
-	tcfg "github.com/rish1988/go-libp2p-tor-transport/config"
 	"github.com/rish1988/libp2p-chat/chat"
 	"github.com/rish1988/libp2p-chat/config"
 	"github.com/rish1988/libp2p-chat/log"
@@ -28,11 +26,28 @@ func BootStrapApp(privKey *crypto.PrivKey, cfg *config.Config) *host.Host {
 
 	var idht *dht.IpfsDHT
 
+	//_, err = tor.NewBuilder(
+	//	tcfg.AllowTcpDial,                 // Some Configurator are already ready to use.
+	//	tcfg.SetSetupTimeout(time.Minute), // Some require a parameter, in this case it's a function that will return a Configurator.
+	//	tcfg.SetBinaryPath("/opt/homebrew/bin/tor"),
+	//)
+
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	//key, _ := (*privKey).Raw()
+	//var dest []byte
+	//base32.HexEncoding.Encode(dest, key)
+	//base32Addr := fmt.Sprintf("/onion3/%s:5005", key)
+	//cfg.ListenAddrs = append(cfg.ListenAddrs, base32Addr)
+
 	node, err := libp2p.New(
 		libp2p.Identity(*privKey),
 		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.Security(libp2ptls.ID, libp2ptls.New),
-		libp2p.DefaultTransports,
+		//libp2p.DefaultTransports,
 		libp2p.NATPortMap(),
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
 			log.Infoln("Creating Kademlia Hash table (KHT)")
@@ -47,7 +62,7 @@ func BootStrapApp(privKey *crypto.PrivKey, cfg *config.Config) *host.Host {
 		// NATs, you can launch the server-side of AutoNAT too (AutoRelay
 		// already runs the client)
 		libp2p.EnableNATService(),
-		libp2p.Transport(tor.NewBuilder(tcfg.EnableEmbeded)),
+		//libp2p.Transport(tpt),
 	)
 
 	if err != nil {
@@ -127,7 +142,26 @@ func printAddrInfo(err error, peerInfo peer.AddrInfo) {
 	log.Infoln(strings.Repeat("=", 80))
 }
 
+func connectToBootstrapPeers(h *host.Host, peerAddresses []*config.RemotePeer) error {
+	for _, peerAddress := range peerAddresses {
+		peerAddrs := peerAddress.Addresses()
+		for _, addr := range peerAddrs {
+			if err := (*h).Connect(context.Background(), addr); err != nil {
+				log.Errorln("Connection failed:", err)
+			} else {
+				log.Infoln("Connected to:", addr.ID)
+			}
+		}
+	}
+	return nil
+}
+
 func printPeerIdInfo(protobufEncodedPubKey []byte, node host.Host) {
+	ps := node.Peerstore()
+	addrs := ps.PeersWithAddrs()
+	for _, addr := range addrs {
+		log.Infoln(addr)
+	}
 	log.Infoln("Node PeerID: <Identity=0x00><Length-Pubkey-Protobuf=0x25><Pubkey-Protobuf-Encoded>")
 	log.Infof("Node PeerID: 0025%v", hex.EncodeToString(protobufEncodedPubKey))
 	log.Infof("Node PeerID (base58btc): %v", base58.Encode(append([]byte{0x00, 0x25}, protobufEncodedPubKey...)))

@@ -10,9 +10,7 @@
   },
   "listenAddrs": [
     "/ip4/0.0.0.0/tcp/9001",
-    "/ip6/::/tcp/9001",
-    "/ip4/0.0.0.0/udp/9001/quic",
-    "/ip6/::/udp/9001/quic"
+    "/ip6/::/tcp/9001"
   ],
   "remotePeers" : [],
   "name": "Bob"
